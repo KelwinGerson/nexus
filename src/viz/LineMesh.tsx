@@ -11,6 +11,7 @@ type LineMeshProps = {
   radius: number
   purity: number
   sacred: number
+  fed?: boolean
   kind?: BranchKind
   captura?: boolean
   onToggle?: () => void
@@ -30,6 +31,7 @@ export function LineMesh({
   radius,
   purity,
   sacred,
+  fed = false,
   kind = 'branch',
   captura = false,
   onToggle,
@@ -40,6 +42,7 @@ export function LineMesh({
   const radiusSpring = useSpring(36, 11, radius)
   const puritySpring = useSpring(16, 12, purity)
   const sacredSpring = useSpring(12, 12, sacred)
+  const fedSpring = useSpring(22, 14, fed ? 1 : 0)
 
   const taper = {
     trunk: { join: 1.0, tip: 0.22, breath: 0.006 },
@@ -59,6 +62,7 @@ export function LineMesh({
       uBreath: { value: taper.breath },
       uPurity: { value: purity },
       uSacred: { value: sacred },
+      uFed: { value: fed ? 1 : 0 },
       uClean: { value: CLEAN.clone() },
       uMuddy: { value: MUDDY.clone() },
       uSacredTint: { value: SACRED.clone() },
@@ -73,6 +77,7 @@ export function LineMesh({
     mat.uniforms.uRadius.value = radiusSpring.step(radius, dt)
     mat.uniforms.uPurity.value = puritySpring.step(purity, dt)
     mat.uniforms.uSacred.value = sacredSpring.step(sacred, dt)
+    mat.uniforms.uFed.value = fedSpring.step(fed ? 1 : 0, dt)
     mat.uniforms.uIrregular.value = kind === 'branch' || kind === 'twig' ? 1 - purity : 0.18
     mat.uniforms.uTime.value += dt
     mat.uniforms.uJoin.value = taper.join

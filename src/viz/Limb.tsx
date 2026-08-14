@@ -21,9 +21,10 @@ export function Limb({ spec, visual, radius, onToggle, onHover }: LimbProps) {
   return (
     <LineMesh
       attribs={attribs}
-      radius={radius}
+      radius={radius * (visual?.fedToday && spec.kind !== 'root' ? 1.07 : 1)}
       purity={visual?.purity ?? 1}
       sacred={sacred}
+      fed={visual?.fedToday ?? false}
       kind={spec.kind}
       captura={visual?.polarity === 'captura'}
       onToggle={lineId && onToggle ? () => onToggle(lineId) : undefined}

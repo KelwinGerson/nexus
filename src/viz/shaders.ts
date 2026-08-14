@@ -102,6 +102,7 @@ export const lineVertex = /* glsl */ `
 export const lineFragment = /* glsl */ `
   uniform float uPurity;
   uniform float uSacred;
+  uniform float uFed;
   uniform float uKind;
   uniform vec3 uClean;
   uniform vec3 uMuddy;
@@ -162,6 +163,7 @@ export const lineFragment = /* glsl */ `
     }
     col += uSacredTint * uSacred * sapMask * 0.55;
     col += uSacredTint * uSacred * uSacred * fres * sapMask * 0.2;
+    col += vec3(0.28, 0.2, 0.1) * uFed * (0.22 + 0.4 * fres + sapMask * 0.18);
 
     gl_FragColor = vec4(col, 1.0);
   }

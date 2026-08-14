@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-A cena é uma árvore: tronco, raízes e ramificações. Cada linha é um galho. Toque o galho (ou `1`–`5`) para o voto de hoje. `6` ou a videira alimenta o parasita. `e` exporta o bosque; `i` importa um backup JSON.
+A cena é uma árvore: tronco, raízes e ramificações. Clique o nome à esquerda para o voto de hoje — o ponto acende, o galho aquece. Clique de novo para desfazer. `e` exporta; `i` importa.
 
 | Linha | Estado fake |
 |---|---|

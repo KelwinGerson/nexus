@@ -1,9 +1,10 @@
 :root {
   color-scheme: dark;
   --bg: #0b0907;
-  --hint: rgba(232, 220, 198, 0.34);
-  --hint-dim: rgba(232, 220, 198, 0.16);
-  --on: rgba(232, 220, 198, 0.72);
+  --ink: #ece2cc;
+  --ink-dim: rgba(236, 226, 204, 0.38);
+  --ink-hot: rgba(236, 226, 204, 0.82);
+  --gold: #d4b56a;
 }
 
 * {
@@ -38,53 +39,97 @@ body {
   z-index: 2;
 }
 
-.wordmark {
+.mast {
   position: absolute;
-  top: 28px;
-  left: 32px;
+  top: 32px;
+  left: 40px;
+}
+
+.wordmark {
   margin: 0;
   font-size: 11px;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: var(--hint-dim);
+  color: rgba(236, 226, 204, 0.28);
   font-weight: 400;
 }
 
-.hints {
+.day {
+  margin: 8px 0 0;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--ink-dim);
+}
+
+.roster {
+  pointer-events: auto;
   position: absolute;
-  left: 28px;
-  bottom: 24px;
+  left: 32px;
+  bottom: 36px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 2px;
   margin: 0;
   padding: 0;
   list-style: none;
-  color: var(--hint-dim);
-  font-size: 11px;
-  letter-spacing: 0.08em;
 }
 
-.hints kbd {
-  display: inline-block;
-  min-width: 1.1em;
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 11px;
-  color: var(--on);
-}
-
-.hints .on {
-  color: var(--on);
-}
-
-.hover-name {
-  position: absolute;
-  left: 50%;
-  bottom: 36px;
+.roster button {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 220px;
   margin: 0;
-  transform: translateX(-50%);
+  padding: 11px 16px 11px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    color 0.28s ease,
+    background 0.28s ease;
+}
+
+.roster button:hover,
+.roster button.hot {
+  color: var(--ink-hot);
+  background: rgba(236, 226, 204, 0.04);
+}
+
+.roster button.on {
+  color: var(--ink);
+}
+
+.roster button.parasite {
   font-size: 15px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--on);
+  opacity: 0.9;
+}
+
+.mark {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(236, 226, 204, 0.32);
+  background: transparent;
+  transition:
+    background 0.28s ease,
+    border-color 0.28s ease,
+    box-shadow 0.28s ease;
+}
+
+.roster button.on .mark {
+  background: var(--gold);
+  border-color: var(--gold);
+  box-shadow: 0 0 12px rgba(212, 181, 106, 0.42);
+}
+
+.roster button:focus-visible {
+  outline: 1px solid rgba(212, 181, 106, 0.45);
+  outline-offset: 2px;
 }

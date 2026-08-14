@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { seedCatalog } from '../data/seed'
 import { loadGrove, parseBackup, persistGrove, replaceGrove, serializeBackup } from '../db'
 import {
   deriveGrove,
@@ -29,7 +30,11 @@ export function useGrove(now = new Date()) {
       })
       .catch((error) => {
         console.error(error)
-        if (!cancelled) setReady(true)
+        if (cancelled) return
+        const seed = seedCatalog(today)
+        setLines(seed.lines)
+        setVotes(seed.votes)
+        setReady(true)
       })
     return () => {
       cancelled = true

@@ -5,15 +5,23 @@ import { Grove } from './viz/Grove'
 
 const KEYS = ['1', '2', '3', '4', '5', '6'] as const
 
+function formatDay(iso: string) {
+  const [year, month, day] = iso.split('-').map(Number)
+  return new Date(year, month - 1, day).toLocaleDateString('pt-BR', {
+    day: 'numeric',
+    month: 'long',
+  })
+}
+
 export default function App() {
   const { ready, today, visuals, toggle, exportBackup, importBackup } = useGrove()
   const [hover, setHover] = useState<string | null>(null)
 
   const principals = visuals
-  const parasite = visuals.flatMap((item) => item.parasites)[0]
+  const parasites = visuals.flatMap((item) => item.parasites)
   const roster = [
-    ...principals.map((item) => ({ id: item.id, name: item.name })),
-    ...(parasite ? [{ id: parasite.id, name: parasite.name }] : []),
+    ...principals.map((item) => ({ id: item.id, name: item.name, parasite: false })),
+    ...parasites.map((item) => ({ id: item.id, name: item.name, parasite: true })),
   ]
 
   useEffect(() => {
@@ -47,21 +55,37 @@ export default function App() {
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: false }}
         onCreated={({ camera }) => {
-          camera.lookAt(0.04, 0.02, 0)
+          camera.lookAt(0.45, 0.04, 0)
         }}
       >
         <Grove visuals={visuals} onToggle={toggle} onHover={setHover} />
       </Canvas>
 
       <div className="chrome">
-        <p className="wordmark">Nexus</p>
-        {hover ? <p className="hover-name">{hover}</p> : null}
-        <ul className="hints">
-          {roster.map((item, index) => (
-            <li key={item.id} className={isFed(visuals, item.id) ? 'on' : undefined}>
-              <kbd>{index + 1}</kbd> {item.name}
-            </li>
-          ))}
+        <header className="mast">
+          <p className="wordmark">Nexus</p>
+          <p className="day">{formatDay(today)}</p>
+        </header>
+
+        <ul className="roster">
+          {roster.map((item) => {
+            const on = isFed(visuals, item.id)
+            const hot = hover === item.name
+            return (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  className={[on && 'on', hot && 'hot', item.parasite && 'parasite'].filter(Boolean).join(' ')}
+                  onClick={() => toggle(item.id)}
+                  onPointerEnter={() => setHover(item.name)}
+                  onPointerLeave={() => setHover(null)}
+                >
+                  <span className="mark" aria-hidden />
+                  <span className="name">{item.name}</span>
+                </button>
+              </li>
+            )
+          })}
         </ul>
       </div>
     </div>

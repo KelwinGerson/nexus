@@ -11,7 +11,7 @@ import { buildTree, findBranch } from './tree'
 function Aim() {
   const { camera } = useThree()
   useLayoutEffect(() => {
-    camera.lookAt(0.04, 0.02, 0)
+    camera.lookAt(0.45, 0.04, 0)
     camera.updateProjectionMatrix()
   }, [camera])
   return null
@@ -34,13 +34,13 @@ export function Grove({ visuals, onToggle, onHover }: GroveProps) {
   return (
     <>
       <color attach="background" args={['#0b0907']} />
-      <fog attach="fog" args={['#0b0907', 11, 24]} />
-      <PerspectiveCamera makeDefault position={[4.05, 0.06, 11.5]} fov={24} near={0.1} far={60} />
+      <fog attach="fog" args={['#0b0907', 13, 26]} />
+      <PerspectiveCamera makeDefault position={[4.35, 0.1, 10.6]} fov={26} near={0.1} far={60} />
       <Aim />
-      <hemisphereLight args={['#3a3228', '#0c0907', 0.34]} />
-      <directionalLight position={[4.2, 6.4, 3.2]} intensity={0.92} color="#f0dcb4" />
-      <directionalLight position={[-3.6, 2.1, -3.2]} intensity={0.28} color="#6a7a8c" />
-      <directionalLight position={[-1.2, 0.2, 4.2]} intensity={0.08} color="#c4b090" />
+      <hemisphereLight args={['#4a4034', '#0c0907', 0.46]} />
+      <directionalLight position={[4.2, 6.4, 3.2]} intensity={1.08} color="#f4e2bc" />
+      <directionalLight position={[-3.6, 2.1, -3.2]} intensity={0.3} color="#7a8898" />
+      <directionalLight position={[-1.2, 0.2, 4.2]} intensity={0.12} color="#c4b090" />
 
       <mesh rotation-x={-Math.PI / 2} position={[0, -2.16, 0]}>
         <circleGeometry args={[3.1, 64]} />
@@ -109,7 +109,7 @@ export function Grove({ visuals, onToggle, onHover }: GroveProps) {
 
       <EffectComposer enableNormalPass={false}>
         <Bloom luminanceThreshold={0.86} luminanceSmoothing={0.42} intensity={bloom} mipmapBlur />
-        <Vignette eskil={false} offset={0.18} darkness={0.62} />
+        <Vignette eskil={false} offset={0.22} darkness={0.38} />
       </EffectComposer>
     </>
   )
