@@ -3,8 +3,8 @@ import { sampleFrame } from './spine'
 
 export function buildHelixAttribs(
   curve: THREE.CatmullRomCurve3,
-  wraps = 7.2,
-  lift = 0.092,
+  wraps = 4.4,
+  lift = 0.1,
   tubular = 320,
   radial = 16,
 ) {
@@ -32,8 +32,9 @@ export function buildHelixAttribs(
     const t = i / (tubular - 1)
     sampleFrame(curve, t, frame)
     const phase = t * wraps * Math.PI * 2
+    const wobble = Math.sin(t * 17.3) * 0.16 + Math.sin(t * 9.1 + 1.2) * 0.1
     radialDir.copy(frame.n).multiplyScalar(Math.cos(phase)).addScaledVector(frame.b, Math.sin(phase))
-    center.copy(frame.p).addScaledVector(radialDir, lift)
+    center.copy(frame.p).addScaledVector(radialDir, lift * (1 + wobble))
 
     curve.getTangentAt(t, tangent)
     helixN.copy(radialDir).normalize()

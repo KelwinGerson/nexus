@@ -25,7 +25,7 @@ export function ParasiteMesh({
   const { camera } = useThree()
   const material = useRef<THREE.ShaderMaterial>(null)
   const vigorSpring = useSpring(16, 11)
-  const geometry = useMemo(() => buildHelixAttribs(curve, 6.6, lift), [curve, lift])
+  const geometry = useMemo(() => buildHelixAttribs(curve, 4.4, lift), [curve, lift])
 
   const uniforms = useMemo(
     () => ({

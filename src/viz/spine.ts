@@ -19,13 +19,61 @@ export function makeSpine(seed = 1.0): THREE.CatmullRomCurve3 {
   return new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.32)
 }
 
+function computeRmf(curve: THREE.CatmullRomCurve3, segments: number) {
+  const points: THREE.Vector3[] = []
+  const tangents: THREE.Vector3[] = []
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments
+    points.push(curve.getPointAt(t))
+    tangents.push(curve.getTangentAt(t).normalize())
+  }
+
+  const normals: THREE.Vector3[] = []
+  const binormals: THREE.Vector3[] = []
+  const t0 = tangents[0]
+  const n0 = new THREE.Vector3()
+  if (Math.abs(t0.y) < 0.92) n0.crossVectors(t0, new THREE.Vector3(0, 1, 0)).normalize()
+  else n0.crossVectors(t0, new THREE.Vector3(1, 0, 0)).normalize()
+  normals.push(n0)
+  binormals.push(new THREE.Vector3().crossVectors(t0, n0).normalize())
+
+  const v1 = new THREE.Vector3()
+  const v2 = new THREE.Vector3()
+  const riL = new THREE.Vector3()
+  const tiL = new THREE.Vector3()
+
+  for (let i = 1; i <= segments; i++) {
+    v1.subVectors(points[i], points[i - 1])
+    const c1 = v1.dot(v1)
+    if (c1 < 1e-12) {
+      normals.push(normals[i - 1].clone())
+      binormals.push(binormals[i - 1].clone())
+      continue
+    }
+    const inv1 = -2 / c1
+    riL.copy(normals[i - 1]).addScaledVector(v1, inv1 * v1.dot(normals[i - 1]))
+    tiL.copy(tangents[i - 1]).addScaledVector(v1, inv1 * v1.dot(tangents[i - 1]))
+    v2.subVectors(tangents[i], tiL)
+    const c2 = v2.dot(v2)
+    const ni = new THREE.Vector3().copy(riL)
+    if (c2 > 1e-12) ni.addScaledVector(v2, (-2 / c2) * v2.dot(riL))
+    ni.normalize()
+    const bi = new THREE.Vector3().crossVectors(tangents[i], ni).normalize()
+    ni.crossVectors(bi, tangents[i]).normalize()
+    normals.push(ni)
+    binormals.push(bi)
+  }
+
+  return { points, tangents, normals, binormals }
+}
+
 export function buildTubeAttribs(
   curve: THREE.CatmullRomCurve3,
   tubular = 240,
   radial = 40,
 ): TubeAttribs {
   const segments = tubular - 1
-  const frames = curve.computeFrenetFrames(segments, false)
+  const frames = computeRmf(curve, segments)
   const count = tubular * radial
   const centers = new Float32Array(count * 3)
   const normals = new Float32Array(count * 3)
@@ -36,11 +84,9 @@ export function buildTubeAttribs(
   const positions = new Float32Array(count * 3)
   const indices: number[] = []
 
-  const p = new THREE.Vector3()
-
   for (let i = 0; i < tubular; i++) {
     const t = i / segments
-    curve.getPointAt(t, p)
+    const p = frames.points[i]
     const n = frames.normals[i]
     const b = frames.binormals[i]
     const tan = frames.tangents[i]

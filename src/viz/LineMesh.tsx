@@ -19,11 +19,11 @@ type LineMeshProps = {
 
 const KIND = { trunk: 0, branch: 1, twig: 2, root: 3 } as const
 
-const CLEAN = new THREE.Color('#9a8166')
-const CAPTURA = new THREE.Color('#5e4c40')
-const MUDDY = new THREE.Color('#3a2d24')
-const SACRED = new THREE.Color('#d7b06a')
-const WOOD = new THREE.Color('#4a3a2c')
+const CLEAN = new THREE.Color('#6a5038')
+const CAPTURA = new THREE.Color('#3a2e28')
+const MUDDY = new THREE.Color('#1e1610')
+const SACRED = new THREE.Color('#c9a056')
+const WOOD = new THREE.Color('#2a1e16')
 
 export function LineMesh({
   attribs,
@@ -42,10 +42,10 @@ export function LineMesh({
   const sacredSpring = useSpring(12, 12, sacred)
 
   const taper = {
-    trunk: { join: 1.15, tip: 0.42, breath: 0.008 },
-    root: { join: 1.05, tip: 0.18, breath: 0.004 },
-    branch: { join: kind === 'branch' ? 1.08 : 1.05, tip: 0.14, breath: 0.012 },
-    twig: { join: 0.85, tip: 0.08, breath: 0.01 },
+    trunk: { join: 1.0, tip: 0.22, breath: 0.006 },
+    root: { join: 1.18, tip: 0.1, breath: 0.003 },
+    branch: { join: 1.1, tip: 0.12, breath: 0.01 },
+    twig: { join: 0.9, tip: 0.045, breath: 0.008 },
   }[kind]
 
   const uniforms = useMemo(
@@ -73,7 +73,7 @@ export function LineMesh({
     mat.uniforms.uRadius.value = radiusSpring.step(radius, dt)
     mat.uniforms.uPurity.value = puritySpring.step(purity, dt)
     mat.uniforms.uSacred.value = sacredSpring.step(sacred, dt)
-    mat.uniforms.uIrregular.value = kind === 'branch' ? 1 - purity : 0.15
+    mat.uniforms.uIrregular.value = kind === 'branch' || kind === 'twig' ? 1 - purity : 0.18
     mat.uniforms.uTime.value += dt
     mat.uniforms.uJoin.value = taper.join
     mat.uniforms.uTip.value = taper.tip
@@ -81,7 +81,7 @@ export function LineMesh({
     mat.uniforms.uBreath.value = taper.breath
     if (kind === 'trunk' || kind === 'root') {
       mat.uniforms.uClean.value.copy(WOOD)
-      mat.uniforms.uMuddy.value.set('#241910')
+      mat.uniforms.uMuddy.value.set('#1a120c')
     } else {
       mat.uniforms.uClean.value.copy(captura ? CAPTURA : CLEAN)
       mat.uniforms.uMuddy.value.copy(MUDDY)
@@ -89,7 +89,7 @@ export function LineMesh({
     mat.uniforms.uCameraPos.value.copy(camera.position)
   })
 
-  const live = kind === 'branch' || kind === 'twig'
+  const live = Boolean(onToggle)
 
   return (
     <mesh
@@ -125,7 +125,7 @@ export function LineMesh({
         vertexShader={lineVertex}
         fragmentShader={lineFragment}
         uniforms={uniforms}
-        toneMapped
+        toneMapped={false}
       />
     </mesh>
   )

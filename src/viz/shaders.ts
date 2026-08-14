@@ -13,6 +13,17 @@ const noiseLib = /* glsl */ `
     vec2 u = f * f * (3.0 - 2.0 * f);
     return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
   }
+
+  float fbm(vec2 p) {
+    float v = 0.0;
+    float a = 0.5;
+    for (int i = 0; i < 4; i++) {
+      v += a * noise(p);
+      p *= 2.03;
+      a *= 0.5;
+    }
+    return v;
+  }
 `
 
 export const lineVertex = /* glsl */ `
@@ -42,31 +53,41 @@ export const lineVertex = /* glsl */ `
     vT = aT;
     vAngle = aAngle;
 
-    float breath = 1.0 + uBreath * sin(uTime * 1.05 + aT * 4.0);
-    float along = pow(clamp(aT, 0.0, 1.0), 0.62);
+    float breath = 1.0 + uBreath * sin(uTime * 0.85 + aT * 3.2);
+    float along = pow(clamp(aT, 0.0, 1.0), 0.55);
     float taper = mix(uJoin, uTip, along);
 
     if (uKind < 0.5) {
-      float flare = 1.0 + 0.9 * pow(1.0 - aT, 2.4);
-      float crown = mix(1.0, 0.62, smoothstep(0.58, 1.0, aT));
-      taper = flare * crown;
+      float h = aCenter.y + 2.16;
+      float above = smoothstep(-0.12, 0.04, h);
+      float buttress = exp(-max(h, 0.0) * 2.15);
+      float flare = 1.0 + 1.55 * buttress * above;
+      float lobe = 1.0 + 0.26 * buttress * above * (0.45 + 0.55 * sin(aAngle * 3.0 + 0.5));
+      float crown = mix(1.0, 0.26, smoothstep(0.62, 1.0, aT));
+      taper = flare * lobe * crown;
     }
 
-    float tip = smoothstep(0.86, 1.0, aT);
-    float root = 1.0 - smoothstep(0.0, 0.045, aT);
+    float tip = smoothstep(0.84, 1.0, aT);
+    float root = 1.0 - smoothstep(0.0, 0.05, aT);
     if (uKind > 0.5 && uKind < 1.5) {
-      taper *= 1.0 - tip * 0.88;
+      taper *= 1.0 - tip * 0.9;
+    }
+    if (uKind > 1.5 && uKind < 2.5) {
+      taper *= 1.0 - tip * 0.96;
     }
 
-    float lump = (noise(vec2(aT * 5.5, aAngle * 1.2)) - 0.5) * 0.16;
-    float ridge = 0.055 * sin(aAngle * 6.0 + aT * 2.4);
-    float wobble = 1.0 + uIrregular * 0.1 * sin(aT * 14.0 + aAngle * 3.0);
-    float r = max(uRadius * taper * breath * (1.0 + lump + ridge) * wobble, 0.002);
+    float plates = pow(abs(sin(aAngle * 3.2 + fbm(vec2(aT * 2.4, aAngle)) * 2.1)), 1.6);
+    float bark = (fbm(vec2(aT * 7.0, aAngle * 1.6)) - 0.5) * 0.2;
+    float furrow = plates * 0.16;
+    float wobble = 1.0 + uIrregular * 0.08 * sin(aT * 11.0 + aAngle * 2.4);
+    float r = max(uRadius * taper * breath * (1.0 + bark - furrow) * wobble, 0.0016);
 
-    vec3 radial = aNormal * cos(aAngle) + aBinormal * sin(aAngle);
+    float ovalX = uKind < 0.5 ? 1.16 : 1.0;
+    float ovalZ = uKind < 0.5 ? 0.86 : 1.0;
+    vec3 radial = aNormal * cos(aAngle) * ovalX + aBinormal * sin(aAngle) * ovalZ;
     float capPush = 0.0;
     if (uKind > 0.5) {
-      capPush = uRadius * 0.55 * (root * root - tip * tip);
+      capPush = uRadius * 0.5 * (root * root - tip * tip);
     }
     vec3 pos = aCenter + radial * r + aTangent * capPush;
     vec3 worldNormal = normalize(mat3(modelMatrix) * radial);
@@ -95,31 +116,52 @@ export const lineFragment = /* glsl */ `
   ${noiseLib}
 
   void main() {
+    if (vWorldPos.y < -2.17) discard;
+
     vec3 n = normalize(vWorldNormal);
     vec3 v = normalize(uCameraPos - vWorldPos);
     float ndv = max(dot(n, v), 0.0);
-    float fres = pow(1.0 - ndv, 2.6);
+    float fres = pow(1.0 - ndv, 2.4);
 
-    float grain = noise(vec2(vT * 18.0, vAngle * 0.55));
-    float rings = noise(vec2(vT * 4.0 + grain, vAngle * 2.2));
-    float furrow = pow(0.42 + 0.58 * abs(sin(vAngle * 4.5 + rings * 3.4 + vT * 1.1)), 0.7);
+    float grain = fbm(vec2(vT * 16.0, vAngle * 0.45));
+    float rings = fbm(vec2(vT * 3.4 + grain, vAngle * 1.8));
+    float plates = pow(0.38 + 0.62 * abs(sin(vAngle * 3.1 + rings * 2.8 + vT * 0.8)), 0.85);
+    float crack = smoothstep(0.72, 0.96, fbm(vec2(vT * 9.0, vAngle * 2.6)));
+
     vec3 wood = mix(uMuddy, uClean, uPurity);
     if (uKind < 0.5) {
-      wood = mix(vec3(0.16, 0.12, 0.09), vec3(0.32, 0.24, 0.17), 0.45 + 0.35 * furrow);
+      vec3 deep = vec3(0.06, 0.038, 0.02);
+      vec3 mid = vec3(0.18, 0.11, 0.06);
+      vec3 high = vec3(0.3, 0.19, 0.1);
+      wood = mix(deep, mid, plates);
+      wood = mix(wood, high, grain * 0.28);
+      float moss = smoothstep(0.55, 0.95, sin(vAngle - 0.8) * 0.5 + 0.5) * (1.0 - vT);
+      wood = mix(wood, vec3(0.08, 0.1, 0.06), moss * 0.32);
     } else if (uKind > 2.5) {
-      wood = mix(vec3(0.14, 0.11, 0.08), wood, 0.35);
+      wood = mix(vec3(0.07, 0.05, 0.035), wood, 0.22);
     }
 
-    vec3 albedo = wood * mix(0.62, 1.08, furrow) * mix(0.9, 1.06, grain);
-    vec3 lightDir = normalize(vec3(0.45, 0.85, 0.4));
-    float wrap = max(dot(n, lightDir) * 0.5 + 0.5, 0.0);
-    vec3 col = albedo * (0.16 + 0.84 * wrap);
-    col += albedo * fres * 0.16;
+    vec3 albedo = wood * mix(0.52, 1.02, plates) * mix(0.86, 1.04, grain);
+    albedo *= 1.0 - crack * 0.22;
 
-    float sapRise = uKind > 0.5 ? smoothstep(0.18, 0.72, vT) : 0.0;
-    float sap = (1.0 - furrow) * 0.5 + pow(1.0 - ndv, 1.6) * 0.45;
-    col += uSacredTint * uSacred * sap * sapRise * 0.62;
-    col += uSacredTint * uSacred * uSacred * fres * sapRise * 0.22;
+    vec3 key = normalize(vec3(0.52, 0.78, 0.34));
+    vec3 rim = normalize(vec3(-0.48, 0.28, -0.62));
+    float wrap = max(dot(n, key) * 0.55 + 0.32, 0.0);
+    float rimL = pow(max(dot(n, rim), 0.0), 1.35) * 0.22;
+    vec3 col = albedo * (0.08 + 0.92 * wrap);
+    col += albedo * fres * 0.12;
+    col += vec3(0.3, 0.22, 0.14) * rimL;
+
+    float sapMask = 0.0;
+    if (uKind < 0.5) {
+      float vein = pow(1.0 - abs(sin(vAngle * 2.0 + vT * 0.35)), 10.0);
+      sapMask = vein * smoothstep(0.22, 0.92, vT);
+    } else {
+      sapMask = (1.0 - plates) * 0.45 + pow(1.0 - ndv, 1.5) * 0.4;
+      sapMask *= smoothstep(0.22, 0.78, vT);
+    }
+    col += uSacredTint * uSacred * sapMask * 0.55;
+    col += uSacredTint * uSacred * uSacred * fres * sapMask * 0.2;
 
     gl_FragColor = vec4(col, 1.0);
   }
@@ -176,5 +218,28 @@ export const parasiteFragment = /* glsl */ `
     col *= 0.7 + 0.3 * sin(vT * 28.0);
     col += vec3(0.1, 0.05, 0.03) * pow(1.0 - ndv, 2.0);
     gl_FragColor = vec4(col, 1.0);
+  }
+`
+
+export const groundVertex = /* glsl */ `
+  varying vec2 vUv;
+  varying vec3 vPos;
+  void main() {
+    vUv = uv;
+    vPos = position;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`
+
+export const groundFragment = /* glsl */ `
+  varying vec2 vUv;
+  varying vec3 vPos;
+  void main() {
+    float d = length(vPos.xy);
+    float ring = smoothstep(2.9, 0.15, d);
+    float core = smoothstep(1.15, 0.0, d);
+    float grain = fract(sin(dot(vUv, vec2(127.1, 311.7))) * 43758.5453);
+    vec3 soil = vec3(0.035, 0.024, 0.016) + grain * 0.012;
+    gl_FragColor = vec4(soil, mix(ring * 0.5, 0.88, core));
   }
 `

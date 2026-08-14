@@ -1,16 +1,17 @@
 import { useLayoutEffect, useMemo } from 'react'
 import { PerspectiveCamera } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
-import { Bloom, EffectComposer } from '@react-three/postprocessing'
+import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing'
 import type { LineVisual } from '../domain'
 import { Limb } from './Limb'
 import { ParasiteMesh } from './ParasiteMesh'
+import { groundFragment, groundVertex } from './shaders'
 import { buildTree, findBranch } from './tree'
 
 function Aim() {
   const { camera } = useThree()
   useLayoutEffect(() => {
-    camera.lookAt(0.0, -0.25, 0)
+    camera.lookAt(0.04, 0.02, 0)
     camera.updateProjectionMatrix()
   }, [camera])
   return null
@@ -26,37 +27,50 @@ export function Grove({ visuals, onToggle, onHover }: GroveProps) {
   const layoutKey = visuals.map((item) => item.id).join('|')
   const tree = useMemo(() => buildTree(visuals), [layoutKey, visuals])
   const byId = useMemo(() => new Map(visuals.map((item) => [item.id, item])), [visuals])
-  const trunkRadius = 0.052 + visuals.reduce((sum, item) => sum + item.radius, 0) * 0.18
-  const bloom = visuals.some((item) => item.sacred > 0.7) ? 0.28 : 0.05
+  const leader = tree.leaderId ? byId.get(tree.leaderId) : undefined
+  const trunkRadius = 0.06 + visuals.reduce((sum, item) => sum + item.radius, 0) * 0.18
+  const bloom = visuals.some((item) => item.sacred > 0.7) ? 0.26 : 0.05
 
   return (
     <>
-      <color attach="background" args={['#0a0806']} />
-      <fog attach="fog" args={['#0a0806', 6.5, 16]} />
-      <PerspectiveCamera makeDefault position={[4.8, 0.55, 12.4]} fov={26} near={0.1} far={60} />
+      <color attach="background" args={['#0b0907']} />
+      <fog attach="fog" args={['#0b0907', 11, 24]} />
+      <PerspectiveCamera makeDefault position={[4.05, 0.06, 11.5]} fov={24} near={0.1} far={60} />
       <Aim />
-      <hemisphereLight args={['#3a342c', '#100c09', 0.55]} />
-      <directionalLight position={[3.8, 5.4, 2.6]} intensity={1.05} color="#f3e6c8" />
-      <directionalLight position={[-2.8, 1.4, -2.2]} intensity={0.22} color="#7d8896" />
+      <hemisphereLight args={['#3a3228', '#0c0907', 0.34]} />
+      <directionalLight position={[4.2, 6.4, 3.2]} intensity={0.92} color="#f0dcb4" />
+      <directionalLight position={[-3.6, 2.1, -3.2]} intensity={0.28} color="#6a7a8c" />
+      <directionalLight position={[-1.2, 0.2, 4.2]} intensity={0.08} color="#c4b090" />
 
-      <mesh rotation-x={-Math.PI / 2} position={[0, -2.2, 0]}>
-        <circleGeometry args={[2.1, 48]} />
-        <meshBasicMaterial color="#000000" transparent opacity={0.32} />
+      <mesh rotation-x={-Math.PI / 2} position={[0, -2.16, 0]}>
+        <circleGeometry args={[3.1, 64]} />
+        <shaderMaterial
+          vertexShader={groundVertex}
+          fragmentShader={groundFragment}
+          transparent
+          depthWrite={false}
+        />
       </mesh>
 
-      <Limb spec={tree.trunk} radius={trunkRadius} />
+      <Limb
+        spec={tree.trunk}
+        visual={leader}
+        radius={trunkRadius}
+        onToggle={onToggle}
+        onHover={onHover}
+      />
       {tree.roots.map((root) => (
-        <Limb key={root.id} spec={root} radius={trunkRadius * 0.42} />
+        <Limb key={root.id} spec={root} radius={trunkRadius * root.radiusScale} />
       ))}
       {tree.branches.map((branch) => {
-        const visual = byId.get(branch.id)
+        const visual = byId.get(branch.lineId ?? branch.id)
         if (!visual) return null
         return (
           <Limb
             key={branch.id}
             spec={branch}
             visual={visual}
-            radius={visual.radius * 0.92}
+            radius={visual.radius * branch.radiusScale}
             onToggle={onToggle}
             onHover={onHover}
           />
@@ -70,7 +84,7 @@ export function Grove({ visuals, onToggle, onHover }: GroveProps) {
             key={twig.id}
             spec={twig}
             visual={visual}
-            radius={visual.radius * 0.34}
+            radius={visual.radius * twig.radiusScale}
             onToggle={onToggle}
             onHover={onHover}
           />
@@ -85,7 +99,7 @@ export function Grove({ visuals, onToggle, onHover }: GroveProps) {
               key={parasite.id}
               curve={host.curve}
               vigor={parasite.vigor}
-              lift={visual.radius * 1.05 + 0.012}
+              lift={visual.radius * 1.15 + 0.014}
               onToggle={() => onToggle(parasite.id)}
               onHover={(over) => onHover(over ? parasite.name : null)}
             />
@@ -94,7 +108,8 @@ export function Grove({ visuals, onToggle, onHover }: GroveProps) {
       )}
 
       <EffectComposer enableNormalPass={false}>
-        <Bloom luminanceThreshold={0.88} luminanceSmoothing={0.4} intensity={bloom} mipmapBlur />
+        <Bloom luminanceThreshold={0.86} luminanceSmoothing={0.42} intensity={bloom} mipmapBlur />
+        <Vignette eskil={false} offset={0.18} darkness={0.62} />
       </EffectComposer>
     </>
   )
