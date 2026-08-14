@@ -1,0 +1,78 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b0907;
+  --hint: rgba(232, 220, 198, 0.34);
+  --hint-dim: rgba(232, 220, 198, 0.16);
+  --on: rgba(232, 220, 198, 0.72);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+body {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.chrome {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.wordmark {
+  position: absolute;
+  top: 28px;
+  left: 32px;
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--hint-dim);
+  font-weight: 400;
+}
+
+.hints {
+  position: absolute;
+  left: 32px;
+  bottom: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--hint);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.hints kbd {
+  display: inline-block;
+  min-width: 1.1em;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--on);
+}
+
+.hints .on {
+  color: var(--on);
+}
