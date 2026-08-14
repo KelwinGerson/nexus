@@ -115,3 +115,8 @@ export function radiusFromDensity(density: number) {
 export function vigorFromDensity(density: number) {
   return clamp(1 - Math.exp(-density / 3.2), 0, 1)
 }
+
+export function leafCountFromDensity(density: number, sacred = false) {
+  const cap = sacred ? 190 : 140
+  return Math.round(cap * (1 - Math.exp(-density / 5.5)))
+}

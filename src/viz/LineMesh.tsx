@@ -1,4 +1,5 @@
-import { useMemo, useRef } from 'react'
+import { useLayoutEffect, useMemo, useRef } from 'react'
+import { useTexture } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { lineFragment, lineVertex } from './shaders'
@@ -39,6 +40,20 @@ export function LineMesh({
 }: LineMeshProps) {
   const { camera } = useThree()
   const material = useRef<THREE.ShaderMaterial>(null)
+  const [barkColor, barkNormal, barkRough] = useTexture([
+    '/tex/bark-color.jpg',
+    '/tex/bark-normal.jpg',
+    '/tex/bark-rough.jpg',
+  ])
+
+  useLayoutEffect(() => {
+    barkColor.wrapS = barkColor.wrapT = THREE.RepeatWrapping
+    barkNormal.wrapS = barkNormal.wrapT = THREE.RepeatWrapping
+    barkRough.wrapS = barkRough.wrapT = THREE.RepeatWrapping
+    barkColor.colorSpace = THREE.SRGBColorSpace
+    barkColor.anisotropy = 8
+    barkNormal.anisotropy = 8
+  }, [barkColor, barkNormal, barkRough])
   const radiusSpring = useSpring(36, 11, radius)
   const puritySpring = useSpring(16, 12, purity)
   const sacredSpring = useSpring(12, 12, sacred)
@@ -67,6 +82,10 @@ export function LineMesh({
       uMuddy: { value: MUDDY.clone() },
       uSacredTint: { value: SACRED.clone() },
       uCameraPos: { value: new THREE.Vector3() },
+      uBarkColor: { value: barkColor },
+      uBarkNormal: { value: barkNormal },
+      uBarkRough: { value: barkRough },
+      uHasBark: { value: 1 },
     }),
     [],
   )
@@ -92,6 +111,10 @@ export function LineMesh({
       mat.uniforms.uMuddy.value.copy(MUDDY)
     }
     mat.uniforms.uCameraPos.value.copy(camera.position)
+    mat.uniforms.uBarkColor.value = barkColor
+    mat.uniforms.uBarkNormal.value = barkNormal
+    mat.uniforms.uBarkRough.value = barkRough
+    mat.uniforms.uHasBark.value = 1
   })
 
   const live = Boolean(onToggle)

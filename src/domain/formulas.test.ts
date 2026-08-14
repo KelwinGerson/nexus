@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { addDays } from './dates'
-import { densityOf, deriveGrove, deriveLine, toggleVote } from './formulas'
+import { densityOf, deriveGrove, deriveLine, leafCountFromDensity, toggleVote } from './formulas'
 import type { Line, Vote } from './types'
 
 const today = '2026-08-14'
@@ -82,6 +82,22 @@ describe('deriveLine', () => {
     const state = deriveLine(corpo, [corpo], votes('corpo', [40, 48]), today)
     expect(state.sacred).toBe(true)
     expect(state.daysInWindow).toBe(0)
+  })
+})
+
+describe('leafCountFromDensity', () => {
+  it('sem densidade não abre copa', () => {
+    expect(leafCountFromDensity(0)).toBe(0)
+  })
+
+  it('densidade alta enche; sagrada enche mais', () => {
+    const common = leafCountFromDensity(10, false)
+    const sacred = leafCountFromDensity(10, true)
+    const young = leafCountFromDensity(1.2, false)
+    expect(common).toBeGreaterThan(young)
+    expect(sacred).toBeGreaterThan(common)
+    expect(young).toBeGreaterThan(0)
+    expect(young).toBeLessThan(40)
   })
 })
 

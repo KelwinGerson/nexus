@@ -32,9 +32,10 @@ export function buildHelixAttribs(
     const t = i / (tubular - 1)
     sampleFrame(curve, t, frame)
     const phase = t * wraps * Math.PI * 2
-    const wobble = Math.sin(t * 17.3) * 0.16 + Math.sin(t * 9.1 + 1.2) * 0.1
+    const wobble = Math.sin(t * 13.7) * 0.22 + Math.sin(t * 6.4 + 1.2) * 0.16 + Math.sin(t * 23.0) * 0.08
+    const pinch = 0.82 + 0.28 * Math.sin(t * 11.0)
     radialDir.copy(frame.n).multiplyScalar(Math.cos(phase)).addScaledVector(frame.b, Math.sin(phase))
-    center.copy(frame.p).addScaledVector(radialDir, lift * (1 + wobble))
+    center.copy(frame.p).addScaledVector(radialDir, lift * pinch * (1 + wobble))
 
     curve.getTangentAt(t, tangent)
     helixN.copy(radialDir).normalize()

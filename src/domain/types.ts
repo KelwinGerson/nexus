@@ -39,6 +39,9 @@ export type LineVisual = {
   sacred: number
   polarity: Polarity
   fedToday: boolean
+  leafCount: number
+  leafWet: number
+  leafGlow: number
   parasites: Array<{ id: string; name: string; vigor: number; fedToday: boolean }>
 }
 

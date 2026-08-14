@@ -44,14 +44,17 @@ export const lineVertex = /* glsl */ `
 
   varying float vT;
   varying float vAngle;
+  varying vec2 vUv;
   varying vec3 vWorldPos;
   varying vec3 vWorldNormal;
+  varying vec3 vWorldTangent;
 
   ${noiseLib}
 
   void main() {
     vT = aT;
     vAngle = aAngle;
+    vUv = vec2(aAngle / 6.2831853, aT * 3.6);
 
     float breath = 1.0 + uBreath * sin(uTime * 0.85 + aT * 3.2);
     float along = pow(clamp(aT, 0.0, 1.0), 0.55);
@@ -95,6 +98,7 @@ export const lineVertex = /* glsl */ `
     vec4 world = modelMatrix * vec4(pos, 1.0);
     vWorldPos = world.xyz;
     vWorldNormal = worldNormal;
+    vWorldTangent = normalize(mat3(modelMatrix) * aTangent);
     gl_Position = projectionMatrix * viewMatrix * world;
   }
 `
@@ -108,11 +112,17 @@ export const lineFragment = /* glsl */ `
   uniform vec3 uMuddy;
   uniform vec3 uSacredTint;
   uniform vec3 uCameraPos;
+  uniform sampler2D uBarkColor;
+  uniform sampler2D uBarkNormal;
+  uniform sampler2D uBarkRough;
+  uniform float uHasBark;
 
   varying float vT;
   varying float vAngle;
+  varying vec2 vUv;
   varying vec3 vWorldPos;
   varying vec3 vWorldNormal;
+  varying vec3 vWorldTangent;
 
   ${noiseLib}
 
@@ -120,6 +130,12 @@ export const lineFragment = /* glsl */ `
     if (vWorldPos.y < -2.17) discard;
 
     vec3 n = normalize(vWorldNormal);
+    if (uHasBark > 0.5) {
+      vec3 t = normalize(vWorldTangent);
+      vec3 btan = normalize(cross(n, t));
+      vec3 mapN = texture2D(uBarkNormal, vUv).xyz * 2.0 - 1.0;
+      n = normalize(t * mapN.x + btan * mapN.y + n * mapN.z);
+    }
     vec3 v = normalize(uCameraPos - vWorldPos);
     float ndv = max(dot(n, v), 0.0);
     float fres = pow(1.0 - ndv, 2.4);
@@ -144,6 +160,12 @@ export const lineFragment = /* glsl */ `
 
     vec3 albedo = wood * mix(0.52, 1.02, plates) * mix(0.86, 1.04, grain);
     albedo *= 1.0 - crack * 0.22;
+    if (uHasBark > 0.5) {
+      vec3 bark = texture2D(uBarkColor, vUv).rgb;
+      float rough = texture2D(uBarkRough, vUv).r;
+      albedo = mix(albedo * 0.55, bark * wood * 2.4, 0.78);
+      albedo *= mix(1.08, 0.72, rough);
+    }
 
     vec3 key = normalize(vec3(0.52, 0.78, 0.34));
     vec3 rim = normalize(vec3(-0.48, 0.28, -0.62));
@@ -234,14 +256,74 @@ export const groundVertex = /* glsl */ `
 `
 
 export const groundFragment = /* glsl */ `
+  uniform sampler2D uMap;
+  uniform float uHasMap;
   varying vec2 vUv;
   varying vec3 vPos;
   void main() {
     float d = length(vPos.xy);
-    float ring = smoothstep(2.9, 0.15, d);
-    float core = smoothstep(1.15, 0.0, d);
-    float grain = fract(sin(dot(vUv, vec2(127.1, 311.7))) * 43758.5453);
-    vec3 soil = vec3(0.035, 0.024, 0.016) + grain * 0.012;
-    gl_FragColor = vec4(soil, mix(ring * 0.5, 0.88, core));
+    float ring = smoothstep(3.4, 0.2, d);
+    float core = smoothstep(1.4, 0.0, d);
+    vec3 soil = vec3(0.04, 0.03, 0.02);
+    if (uHasMap > 0.5) {
+      soil = texture2D(uMap, vUv * 4.0).rgb * 0.45;
+    }
+    gl_FragColor = vec4(soil, mix(ring * 0.4, 0.94, core));
+  }
+`
+
+export const leafVertex = /* glsl */ `
+  attribute vec3 aOffset;
+  attribute vec3 aOut;
+  attribute vec3 aUp;
+  attribute float aPhase;
+  attribute float aScale;
+  attribute float aAlive;
+
+  uniform float uTime;
+  uniform float uWet;
+  uniform float uGlow;
+
+  varying vec2 vUv;
+  varying float vAlive;
+  varying float vShade;
+
+  void main() {
+    vUv = uv;
+    vAlive = aAlive;
+    float sway = sin(uTime * 1.15 + aPhase) * 0.14 * aAlive;
+    vec3 side = normalize(cross(aOut, aUp));
+    vec3 lift = aUp + aOut * 0.35;
+    vec3 pos = aOffset
+      + aOut * (position.y * aScale)
+      + side * (position.x * aScale * 0.55)
+      + lift * (sway * aScale)
+      + aUp * (0.02 * uWet);
+    vShade = 0.65 + 0.35 * uv.y;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+  }
+`
+
+export const leafFragment = /* glsl */ `
+  uniform vec3 uColor;
+  uniform float uWet;
+  uniform float uGlow;
+  uniform vec3 uGlowTint;
+
+  varying vec2 vUv;
+  varying float vAlive;
+  varying float vShade;
+
+  void main() {
+    vec2 p = vUv * 2.0 - 1.0;
+    float blade = 1.0 - abs(p.x) / (0.28 + 0.55 * (1.0 - vUv.y));
+    blade *= smoothstep(0.0, 0.08, vUv.y) * smoothstep(1.0, 0.82, vUv.y);
+    if (blade < 0.12 || vAlive < 0.04) discard;
+    vec3 midrib = uColor * 0.55;
+    vec3 col = mix(midrib, uColor, smoothstep(0.0, 0.18, abs(p.x)));
+    col *= vShade * mix(0.55, 1.05, vAlive);
+    col = mix(col, col * vec3(1.15, 1.08, 0.85), uWet * 0.35);
+    col += uGlowTint * uGlow * 0.22 * vUv.y;
+    gl_FragColor = vec4(col, 0.92);
   }
 `

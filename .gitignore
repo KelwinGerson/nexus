@@ -1,5 +1,8 @@
 node_modules
 dist
+public/tex/**/*.zip
+public/tex/bark/
+public/tex/ground/
 .DS_Store
 *.local
 .env

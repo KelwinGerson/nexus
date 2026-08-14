@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { downloadBackup, isFed, pickBackupFile, useGrove } from './state/useGrove'
 import { Grove } from './viz/Grove'
@@ -55,10 +55,12 @@ export default function App() {
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: false }}
         onCreated={({ camera }) => {
-          camera.lookAt(0.45, 0.04, 0)
+          camera.lookAt(0.4, 0.12, 0)
         }}
       >
-        <Grove visuals={visuals} onToggle={toggle} onHover={setHover} />
+        <Suspense fallback={null}>
+          <Grove visuals={visuals} onToggle={toggle} onHover={setHover} />
+        </Suspense>
       </Canvas>
 
       <div className="chrome">

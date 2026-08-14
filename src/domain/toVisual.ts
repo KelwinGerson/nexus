@@ -1,4 +1,11 @@
-import { densityOf, radiusFromDensity, seedFromId, vigorFromDensity, votesOn } from './formulas'
+import {
+  densityOf,
+  leafCountFromDensity,
+  radiusFromDensity,
+  seedFromId,
+  vigorFromDensity,
+  votesOn,
+} from './formulas'
 import type { DerivedLineState, Line, LineVisual, Polarity, Vote } from './types'
 
 export function toVisual(
@@ -30,6 +37,9 @@ export function toVisual(
     sacred: state.sacred ? 1 : state.sacredProgress * 0.28,
     polarity,
     fedToday: state.fedToday,
+    leafCount: leafCountFromDensity(state.density, state.sacred),
+    leafWet: state.fedToday ? 1 : 0,
+    leafGlow: state.sacred ? 1 : state.sacredProgress * 0.28,
     parasites,
   }
 }
