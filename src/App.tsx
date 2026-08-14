@@ -34,7 +34,7 @@ export default function App() {
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: false }}
         onCreated={({ camera }) => {
-          camera.lookAt(0, 0.08, 0)
+          camera.lookAt(0.0, -0.25, 0)
         }}
       >
         <Grove visuals={visuals} onToggle={toggle} onHover={setHover} />

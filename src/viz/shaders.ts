@@ -1,58 +1,4 @@
-export const lineVertex = /* glsl */ `
-  attribute vec3 aCenter;
-  attribute vec3 aNormal;
-  attribute vec3 aBinormal;
-  attribute vec3 aTangent;
-  attribute float aT;
-  attribute float aAngle;
-
-  uniform float uRadius;
-  uniform float uTime;
-  uniform float uIrregular;
-
-  varying float vT;
-  varying float vAngle;
-  varying vec3 vWorldPos;
-  varying vec3 vWorldNormal;
-
-  void main() {
-    vT = aT;
-    vAngle = aAngle;
-
-    float breath = 1.0 + 0.016 * sin(uTime * 1.15 + aT * 6.28318);
-    float body = smoothstep(0.0, 0.12, aT) * (1.0 - smoothstep(0.82, 1.0, aT));
-    float taper = mix(0.22, 1.12, body);
-    float tip = smoothstep(0.86, 1.0, aT);
-    float root = 1.0 - smoothstep(0.0, 0.07, aT);
-    float cap = max(tip, root);
-    float wobble = 1.0 + uIrregular * 0.14 * sin(aT * 22.0 + aAngle * 4.0 + uTime * 0.55);
-    float r = uRadius * breath * taper * wobble * (1.0 - cap * 0.92);
-
-    vec3 radial = aNormal * cos(aAngle) + aBinormal * sin(aAngle);
-    float capPush = uRadius * 0.9 * (root * root - tip * tip);
-    vec3 pos = aCenter + radial * r + aTangent * capPush;
-    vec3 worldNormal = normalize(mat3(modelMatrix) * radial);
-
-    vec4 world = modelMatrix * vec4(pos, 1.0);
-    vWorldPos = world.xyz;
-    vWorldNormal = worldNormal;
-    gl_Position = projectionMatrix * viewMatrix * world;
-  }
-`
-
-export const lineFragment = /* glsl */ `
-  uniform float uPurity;
-  uniform float uSacred;
-  uniform vec3 uClean;
-  uniform vec3 uMuddy;
-  uniform vec3 uSacredTint;
-  uniform vec3 uCameraPos;
-
-  varying float vT;
-  varying float vAngle;
-  varying vec3 vWorldPos;
-  varying vec3 vWorldNormal;
-
+const noiseLib = /* glsl */ `
   float hash(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
   }
@@ -67,29 +13,115 @@ export const lineFragment = /* glsl */ `
     vec2 u = f * f * (3.0 - 2.0 * f);
     return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
   }
+`
+
+export const lineVertex = /* glsl */ `
+  attribute vec3 aCenter;
+  attribute vec3 aNormal;
+  attribute vec3 aBinormal;
+  attribute vec3 aTangent;
+  attribute float aT;
+  attribute float aAngle;
+
+  uniform float uRadius;
+  uniform float uTime;
+  uniform float uIrregular;
+  uniform float uJoin;
+  uniform float uTip;
+  uniform float uKind;
+  uniform float uBreath;
+
+  varying float vT;
+  varying float vAngle;
+  varying vec3 vWorldPos;
+  varying vec3 vWorldNormal;
+
+  ${noiseLib}
+
+  void main() {
+    vT = aT;
+    vAngle = aAngle;
+
+    float breath = 1.0 + uBreath * sin(uTime * 1.05 + aT * 4.0);
+    float along = pow(clamp(aT, 0.0, 1.0), 0.62);
+    float taper = mix(uJoin, uTip, along);
+
+    if (uKind < 0.5) {
+      float flare = 1.0 + 0.9 * pow(1.0 - aT, 2.4);
+      float crown = mix(1.0, 0.62, smoothstep(0.58, 1.0, aT));
+      taper = flare * crown;
+    }
+
+    float tip = smoothstep(0.86, 1.0, aT);
+    float root = 1.0 - smoothstep(0.0, 0.045, aT);
+    if (uKind > 0.5 && uKind < 1.5) {
+      taper *= 1.0 - tip * 0.88;
+    }
+
+    float lump = (noise(vec2(aT * 5.5, aAngle * 1.2)) - 0.5) * 0.16;
+    float ridge = 0.055 * sin(aAngle * 6.0 + aT * 2.4);
+    float wobble = 1.0 + uIrregular * 0.1 * sin(aT * 14.0 + aAngle * 3.0);
+    float r = max(uRadius * taper * breath * (1.0 + lump + ridge) * wobble, 0.002);
+
+    vec3 radial = aNormal * cos(aAngle) + aBinormal * sin(aAngle);
+    float capPush = 0.0;
+    if (uKind > 0.5) {
+      capPush = uRadius * 0.55 * (root * root - tip * tip);
+    }
+    vec3 pos = aCenter + radial * r + aTangent * capPush;
+    vec3 worldNormal = normalize(mat3(modelMatrix) * radial);
+
+    vec4 world = modelMatrix * vec4(pos, 1.0);
+    vWorldPos = world.xyz;
+    vWorldNormal = worldNormal;
+    gl_Position = projectionMatrix * viewMatrix * world;
+  }
+`
+
+export const lineFragment = /* glsl */ `
+  uniform float uPurity;
+  uniform float uSacred;
+  uniform float uKind;
+  uniform vec3 uClean;
+  uniform vec3 uMuddy;
+  uniform vec3 uSacredTint;
+  uniform vec3 uCameraPos;
+
+  varying float vT;
+  varying float vAngle;
+  varying vec3 vWorldPos;
+  varying vec3 vWorldNormal;
+
+  ${noiseLib}
 
   void main() {
     vec3 n = normalize(vWorldNormal);
     vec3 v = normalize(uCameraPos - vWorldPos);
     float ndv = max(dot(n, v), 0.0);
-    float fres = pow(1.0 - ndv, 2.4);
+    float fres = pow(1.0 - ndv, 2.6);
 
-    float fiber = 0.58 + 0.42 * sin(vAngle * 10.0 + noise(vec2(vT * 8.0, vAngle * 2.0)) * 2.2);
-    float grain = mix(0.84, 1.12, noise(vec2(vT * 14.0, vAngle * 3.2)));
-    vec3 albedo = mix(uMuddy, uClean, uPurity) * mix(0.74, 1.05, fiber) * grain;
+    float grain = noise(vec2(vT * 18.0, vAngle * 0.55));
+    float rings = noise(vec2(vT * 4.0 + grain, vAngle * 2.2));
+    float furrow = pow(0.42 + 0.58 * abs(sin(vAngle * 4.5 + rings * 3.4 + vT * 1.1)), 0.7);
+    vec3 wood = mix(uMuddy, uClean, uPurity);
+    if (uKind < 0.5) {
+      wood = mix(vec3(0.16, 0.12, 0.09), vec3(0.32, 0.24, 0.17), 0.45 + 0.35 * furrow);
+    } else if (uKind > 2.5) {
+      wood = mix(vec3(0.14, 0.11, 0.08), wood, 0.35);
+    }
 
-    vec3 lightDir = normalize(vec3(0.35, 0.8, 0.55));
-    float wrap = max(dot(n, lightDir) * 0.55 + 0.45, 0.0);
-    vec3 col = albedo * (0.18 + 0.82 * wrap);
-    col += albedo * fres * 0.22;
+    vec3 albedo = wood * mix(0.62, 1.08, furrow) * mix(0.9, 1.06, grain);
+    vec3 lightDir = normalize(vec3(0.45, 0.85, 0.4));
+    float wrap = max(dot(n, lightDir) * 0.5 + 0.5, 0.0);
+    vec3 col = albedo * (0.16 + 0.84 * wrap);
+    col += albedo * fres * 0.16;
 
-    float inner = 0.18 + 0.72 * pow(1.0 - ndv, 1.35) + 0.16 * fiber;
-    col += uSacredTint * uSacred * inner;
-    col += uSacredTint * uSacred * uSacred * 0.7;
+    float sapRise = uKind > 0.5 ? smoothstep(0.18, 0.72, vT) : 0.0;
+    float sap = (1.0 - furrow) * 0.5 + pow(1.0 - ndv, 1.6) * 0.45;
+    col += uSacredTint * uSacred * sap * sapRise * 0.62;
+    col += uSacredTint * uSacred * uSacred * fres * sapRise * 0.22;
 
-    float luma = dot(col, vec3(0.299, 0.587, 0.114));
     gl_FragColor = vec4(col, 1.0);
-    gl_FragColor.rgb += step(0.72, uSacred) * max(luma - 0.55, 0.0) * uSacredTint * 0.35;
   }
 `
 
@@ -112,9 +144,9 @@ export const parasiteVertex = /* glsl */ `
     vT = aT;
     float alive = smoothstep(0.0, 0.08, uVigor);
     float cut = step(aT, uVigor);
-    float breath = 1.0 + 0.06 * sin(uTime * 2.1 + aT * 18.0);
-    float bump = 1.0 + 0.22 * sin(aT * 54.0 + aAngle * 5.0);
-    float r = uRadius * breath * bump * alive * mix(0.15, 1.0, cut);
+    float breath = 1.0 + 0.07 * sin(uTime * 1.8 + aT * 16.0);
+    float bump = 1.0 + 0.28 * sin(aT * 40.0 + aAngle * 4.0);
+    float r = uRadius * breath * bump * alive * mix(0.12, 1.0, cut);
 
     vec3 radial = aNormal * cos(aAngle) + aBinormal * sin(aAngle);
     vec3 pos = aCenter + radial * r;
@@ -139,10 +171,10 @@ export const parasiteFragment = /* glsl */ `
     vec3 n = normalize(vWorldNormal);
     vec3 v = normalize(uCameraPos - vWorldPos);
     float ndv = max(dot(n, v), 0.0);
-    float wrap = max(dot(n, normalize(vec3(0.2, 0.7, 0.4))) * 0.5 + 0.5, 0.0);
-    vec3 col = uColor * (0.22 + 0.78 * wrap);
-    col *= 0.75 + 0.25 * sin(vT * 40.0);
-    col += vec3(0.12, 0.07, 0.04) * pow(1.0 - ndv, 2.0);
+    float wrap = max(dot(n, normalize(vec3(0.25, 0.75, 0.35))) * 0.5 + 0.5, 0.0);
+    vec3 col = uColor * (0.2 + 0.8 * wrap);
+    col *= 0.7 + 0.3 * sin(vT * 28.0);
+    col += vec3(0.1, 0.05, 0.03) * pow(1.0 - ndv, 2.0);
     gl_FragColor = vec4(col, 1.0);
   }
 `

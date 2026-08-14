@@ -52,17 +52,17 @@ body {
 
 .hints {
   position: absolute;
-  left: 32px;
-  bottom: 28px;
+  left: 28px;
+  bottom: 24px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   margin: 0;
   padding: 0;
   list-style: none;
-  color: var(--hint);
-  font-size: 12px;
-  letter-spacing: 0.04em;
+  color: var(--hint-dim);
+  font-size: 11px;
+  letter-spacing: 0.08em;
 }
 
 .hints kbd {

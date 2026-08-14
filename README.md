@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-O bosque já nasce em estados diferentes. Toque o tronco (ou `1`–`5`) para o voto de hoje. `6` ou a videira alimenta o parasita.
+A cena é uma árvore: tronco, raízes e ramificações. Cada linha é um galho. Toque o galho (ou `1`–`5`) para o voto de hoje. `6` ou a videira alimenta o parasita.
 
 | Linha | Estado fake |
 |---|---|
