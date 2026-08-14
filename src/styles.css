@@ -76,3 +76,15 @@ body {
 .hints .on {
   color: var(--on);
 }
+
+.hover-name {
+  position: absolute;
+  left: 50%;
+  bottom: 36px;
+  margin: 0;
+  transform: translateX(-50%);
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--on);
+}

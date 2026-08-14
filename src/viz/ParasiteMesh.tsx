@@ -8,15 +8,24 @@ import { useSpring } from './useSpring'
 type ParasiteMeshProps = {
   curve: THREE.CatmullRomCurve3
   vigor: number
+  lift?: number
+  onToggle?: () => void
+  onHover?: (over: boolean) => void
 }
 
 const COLOR = new THREE.Color('#3a2a22')
 
-export function ParasiteMesh({ curve, vigor }: ParasiteMeshProps) {
+export function ParasiteMesh({
+  curve,
+  vigor,
+  lift = 0.09,
+  onToggle,
+  onHover,
+}: ParasiteMeshProps) {
   const { camera } = useThree()
   const material = useRef<THREE.ShaderMaterial>(null)
   const vigorSpring = useSpring(16, 11)
-  const geometry = useMemo(() => buildHelixAttribs(curve, 6.6, 0.09), [curve])
+  const geometry = useMemo(() => buildHelixAttribs(curve, 6.6, lift), [curve, lift])
 
   const uniforms = useMemo(
     () => ({
@@ -38,7 +47,23 @@ export function ParasiteMesh({ curve, vigor }: ParasiteMeshProps) {
   })
 
   return (
-    <mesh geometry={geometry} frustumCulled={false}>
+    <mesh
+      geometry={geometry}
+      frustumCulled={false}
+      onClick={(e) => {
+        e.stopPropagation()
+        onToggle?.()
+      }}
+      onPointerOver={(e) => {
+        e.stopPropagation()
+        document.body.style.cursor = 'pointer'
+        onHover?.(true)
+      }}
+      onPointerOut={() => {
+        document.body.style.cursor = 'auto'
+        onHover?.(false)
+      }}
+    >
       <shaderMaterial
         ref={material}
         vertexShader={parasiteVertex}

@@ -2,19 +2,21 @@
 
 Projeto pessoal. A visualização é o sistema.
 
-Agora: **Fase 0** — playground da matéria. Uma linha. Sem CRUD, sem IA, sem tracker.
+Agora: bosque com dados fake. Cinco linhas + um parasita. Sem IA, sem tracker.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Teclas no playground:
+O bosque já nasce em estados diferentes. Toque o tronco (ou `1`–`5`) para o voto de hoje. `6` ou a videira alimenta o parasita.
 
-| Tecla | Gesto |
+| Linha | Estado fake |
 |---|---|
-| `1` ou clique na linha | voto do dia (liga/desliga) |
-| `2` | parasita (liga/desliga) |
-| `3` | sagrado (liga/desliga) |
+| Corpo | densa, sagrada |
+| Escrita | no meio do caminho |
+| Noite | captura, suja pelo parasita Tela |
+| Silêncio | abandonada |
+| Casa | linha nova |
 
 Leia `docs/METAFORA.md` antes de acrescentar qualquer tela.

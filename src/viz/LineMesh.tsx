@@ -10,14 +10,25 @@ type LineMeshProps = {
   radius: number
   purity: number
   sacred: number
+  captura?: boolean
   onToggle?: () => void
+  onHover?: (over: boolean) => void
 }
 
 const CLEAN = new THREE.Color('#c8b596')
+const CAPTURA = new THREE.Color('#8d7d6c')
 const MUDDY = new THREE.Color('#5a4c3c')
 const SACRED = new THREE.Color('#f0d6a4')
 
-export function LineMesh({ attribs, radius, purity, sacred, onToggle }: LineMeshProps) {
+export function LineMesh({
+  attribs,
+  radius,
+  purity,
+  sacred,
+  captura = false,
+  onToggle,
+  onHover,
+}: LineMeshProps) {
   const { camera } = useThree()
   const material = useRef<THREE.ShaderMaterial>(null)
   const radiusSpring = useSpring(42, 10)
@@ -50,6 +61,7 @@ export function LineMesh({ attribs, radius, purity, sacred, onToggle }: LineMesh
     mat.uniforms.uSacred.value = s
     mat.uniforms.uIrregular.value = 1 - p
     mat.uniforms.uTime.value += dt
+    mat.uniforms.uClean.value.copy(captura ? CAPTURA : CLEAN)
     mat.uniforms.uCameraPos.value.copy(camera.position)
   })
 
@@ -63,9 +75,11 @@ export function LineMesh({ attribs, radius, purity, sacred, onToggle }: LineMesh
       }}
       onPointerOver={() => {
         document.body.style.cursor = 'pointer'
+        onHover?.(true)
       }}
       onPointerOut={() => {
         document.body.style.cursor = 'auto'
+        onHover?.(false)
       }}
     >
       <shaderMaterial

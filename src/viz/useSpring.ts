@@ -5,8 +5,8 @@ type Spring = {
   velocity: number
 }
 
-export function useSpring(stiffness = 38, damping = 11) {
-  const spring = useRef<Spring>({ value: 0, velocity: 0 })
+export function useSpring(stiffness = 38, damping = 11, initial = 0) {
+  const spring = useRef<Spring>({ value: initial, velocity: 0 })
 
   const step = (target: number, dt: number) => {
     const s = spring.current
