@@ -1,4 +1,5 @@
 export * from './types'
 export * from './dates'
 export * from './formulas'
+export * from './order'
 export * from './toVisual'

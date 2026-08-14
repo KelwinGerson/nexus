@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { isFed, useGrove } from './state/useGrove'
+import { downloadBackup, isFed, pickBackupFile, useGrove } from './state/useGrove'
 import { Grove } from './viz/Grove'
 
 const KEYS = ['1', '2', '3', '4', '5', '6'] as const
 
 export default function App() {
-  const { visuals, toggle } = useGrove()
+  const { ready, today, visuals, toggle, exportBackup, importBackup } = useGrove()
   const [hover, setHover] = useState<string | null>(null)
 
   const principals = visuals
@@ -17,8 +17,19 @@ export default function App() {
   ]
 
   useEffect(() => {
+    if (!ready) return
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat) return
+      if (e.key === 'e' || e.key === 'E') {
+        downloadBackup(exportBackup(), today)
+        return
+      }
+      if (e.key === 'i' || e.key === 'I') {
+        void pickBackupFile()
+          .then((raw) => importBackup(raw))
+          .catch((error) => console.error(error))
+        return
+      }
       const index = KEYS.indexOf(e.key as (typeof KEYS)[number])
       if (index < 0) return
       const target = roster[index]
@@ -26,7 +37,9 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [roster, toggle])
+  }, [exportBackup, importBackup, ready, roster, today, toggle])
+
+  if (!ready) return <div className="stage" />
 
   return (
     <div className="stage">

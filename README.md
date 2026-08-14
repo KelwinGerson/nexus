@@ -2,14 +2,14 @@
 
 Projeto pessoal. A visualização é o sistema.
 
-Agora: bosque com dados fake. Cinco linhas + um parasita. Sem IA, sem tracker.
+Bosque local. Cinco linhas + um parasita. Votos ficam no IndexedDB. Sem IA, sem tracker.
 
 ```bash
 npm install
 npm run dev
 ```
 
-A cena é uma árvore: tronco, raízes e ramificações. Cada linha é um galho. Toque o galho (ou `1`–`5`) para o voto de hoje. `6` ou a videira alimenta o parasita.
+A cena é uma árvore: tronco, raízes e ramificações. Cada linha é um galho. Toque o galho (ou `1`–`5`) para o voto de hoje. `6` ou a videira alimenta o parasita. `e` exporta o bosque; `i` importa um backup JSON.
 
 | Linha | Estado fake |
 |---|---|

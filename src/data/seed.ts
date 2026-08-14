@@ -13,7 +13,7 @@ function votesFromOffsets(lineId: string, today: string, offsets: number[]): Vot
   return offsets.map((offset) => stamp(lineId, addDays(today, -offset)))
 }
 
-export function fakeCatalog(today: string): { lines: Line[]; votes: Vote[] } {
+export function seedCatalog(today: string): { lines: Line[]; votes: Vote[] } {
   const created = addDays(today, -80)
 
   const lines: Line[] = [
